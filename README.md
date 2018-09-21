@@ -24,4 +24,4 @@ The use, distribution or possession of this program is may completely illegal in
 country. You are responsible for your legal security, so either don't use it or don't get 
 caught using it! This is just a fun project and I assume no warranty or legal rights!
 
-![MoX Interface](https://raw.githubusercontent.com/vkGiot/MoX/develop/mox.png)
+![MoX Interface](https://raw.githubusercontent.com/vkGiot/MoX/master/mox.png)
