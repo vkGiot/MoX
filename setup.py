@@ -17,8 +17,8 @@ cx_Freeze.setup(
         "packages": ["tkinter", "requests"],
         "include_files": [
             "ffmpeg/", "assets/", 
-            r"C:\WinPython\python-3.6.1.amd64\DLLs\tcl86t.dll",
-            r"C:\WinPython\python-3.6.1.amd64\DLLs\tk86t.dll"
+            os.path.join(sys.exec_prefix, "DLLs", "tk86t.dll"),
+            os.path.join(sys.exec_prefix, "DLLs", "tcl86t.dll")
         ]
     }},
     executables = [cx_Freeze.Executable("mox.py", base=base), cx_Freeze.Executable("mmp3.py")]
