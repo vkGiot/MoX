@@ -18,7 +18,7 @@ The music hosted on MusicMP3.ru needs to be converted to the MP3 format (yes, re
 therefore the **FFmpeg** environment is required. The Windows executable version already 
 includes the FFmpeg plugin, on GNU/Linux you need to install this on your own.
 
-**OWN AND USE THIS SCRIPT AT YOUR DOWN RISK**
+**OWN AND USE THIS SCRIPT AT YOUR OWN RISK**
 ---------------------------------------------
 The use, distribution or possession of this program is may completely illegal in your 
 country. You are responsible for your legal security, so either don't use it or don't get 
