@@ -4,7 +4,7 @@ vkGiots MoX MusicMP3.ru Downloader
 - usable via CLI and as Tkinter-based Window
 
 @author         vkGiot <vkgiot@mail.ru>
-@version        0.1.0-alpha
+@version        0.1.1-alpha
 @license        MIT License
 @website        https://github.com/vkGiot/MoX
 
@@ -13,20 +13,29 @@ vkGiots MoX MusicMP3.ru Downloader
                 Requests @ http://docs.python-requests.org/en/master/
                          © Licensed under Apache 2.0
 
-OWN AND USE AT YOUR DOWN RISK
+OWN AND USE AT YOUR OWN RISK
 The use, distribution or possession of this program is may completely illegal 
-in your country. So make sure its legal in your country, or nobody sees you!
-I just wrote this program for fun, and assume no warranty or legal rights.
+in your country. You are responsible for your legal security, so either don't 
+use it or don't get caught using it! This is just a fun project and I assume 
+no warranty or legal rights!
 """
-import os, sys, time, subprocess, argparse
+
+import os
+import sys
+import time
+import subprocess
+import argparse
 import multiprocessing.dummy as multiprocessing
 import requests
+
 from html.parser import HTMLParser
 
-##
-##  MusicMP3 URL CHECK
-##
+
 def MMP3_URL(url):
+    """Sanitize and Check the MusicMP3.ru URL
+    
+    @since  0.1.0
+    """
     if type(url) != str:
         return False
     
@@ -41,15 +50,20 @@ def MMP3_URL(url):
     # Check URL
     if not url.startswith("https://musicmp3.ru"):
         return False
-    
-    ## Success
     return url
 
-##
-##  MusicMP3 HTML PARSER
-##
+
 class MMP3_Parser(HTMLParser):
+    """HTML Parser for the MusicMP3.ru Page Content
+    
+    @since  0.1.0
+    """
+    
     def __init__(self):
+        """MMP3 HTML Parser Constructor
+        
+        @since  0.1.0
+        """
         self.data = {
             "album": "Unknown",
             "artist": "Unkown",
@@ -60,8 +74,11 @@ class MMP3_Parser(HTMLParser):
         self.listen = False
         super().__init__()
     
-    # Sanitize Text
     def sanitize(self, data):
+        """Sanitize Text Content (I'm not quite sure about Python's RegExp yet)
+        
+        @since  0.1.0
+        """
         data = data.replace(": ", " - ")
         data = data.replace(":", "")
         data = data.replace("\\", "")
@@ -74,8 +91,11 @@ class MMP3_Parser(HTMLParser):
         data = data.replace("|", "")
         return data.strip()
     
-    # Starting HTML Tag
     def handle_starttag(self, tag, attrs):
+        """Handle HTML Start Tags
+        
+        @since  0.1.0
+        """
         attrs = dict(attrs);
         
         if tag == "a":
@@ -102,8 +122,11 @@ class MMP3_Parser(HTMLParser):
             elif "itemprop" in attrs and attrs["itemprop"] == "dateCreated":
                 self.listen = "release"
     
-    # Endign HTML Tag
     def handle_data(self, data):
+        """Handle HTML Inner Content
+        
+        @since  0.1.0
+        """
         if self.listen == "album":
             self.data[self.listen] = self.sanitize(data)
             
@@ -120,10 +143,12 @@ class MMP3_Parser(HTMLParser):
         self.track = None
         self.listen = False
 
-##
-##  MusicMP3 DOWNLOADER SCRIPT
-##
+
 class MMP3:
+    """Main MMP3 Class, where the Magix happens
+    
+    @since  0.1.0
+    """
     headers = {
         "Host": "musicmp3.ru",
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:42.0) Gecko/20100101 Firefox/42.0",
@@ -134,8 +159,23 @@ class MMP3:
     }
     listener = "https://listen.musicmp3.ru/"
     
-    # Constructor
     def __init__(self, path):
+        """MMP3 Constructor
+        
+        @since  0.1.0
+        @update 0.1.1
+        """
+        if path is None or os.path.isdir(path) is False:
+            if "APPDATA" in os.environ:
+                path = os.path.abspath(os.getenv("APPDATA") + r"..\\..\\..\\")
+            else:
+                path = os.path.expanduser("~")
+            if os.path.isdir(os.path.join(path, "Music")):
+                path = os.path.join(path, "Music")
+            elif os.path.isdir(os.path.join(path, "Downloads")):
+                path = os.path.join(path, "Downloads")
+        
+        # Set Class Variables
         self.path = path
         self.pool = None
         self.running = False
@@ -147,8 +187,11 @@ class MMP3:
         
         self.processes = {}     # Current Proccesses
         
-    # Fetch URL
     def fetch(self, url):
+        """Fetch the MusicMP3.ru URL
+        
+        @since  0.1.0
+        """
         response = requests.get(url, headers=self.headers);
         if response.status_code != 200:
             return False
@@ -167,17 +210,20 @@ class MMP3:
             new.append(self.downloads[track["hash"]])
         return new
     
-    # Download Track
     def download(self, track):
+        """Download and Converter Function
+        
+        @since  0.1.0
+        @update 0.1.1
+        """
         headers = self.headers;
         
         # Get Data
         content = requests.get("https://listen.musicmp3.ru/" + track["hash"], headers=headers, stream=True)
         if content.status_code != 200:
-            self.callback(track, "Error: " + str(content.status_code))
+            self.callback(track, (False, str(content.status_code)))
             time.sleep(1.5)
-            
-            self.callback(track, "Reload")
+            self.callback(track, (None, "Reload"))
             time.sleep(0.25)
             return self.download(track)
         
@@ -203,54 +249,72 @@ class MMP3:
                 if chunk:
                     f.write(chunk)
                     size = size+1024
-                    self.callback(track, str(round(size*100 / int(content.headers["content-length"]), 2)) + "%")
+                    self.callback(track, (True, 206, round(size*100 / int(content.headers["content-length"]), 2)))
         
         if self.running is False and os.path.isfile(file + ".mpeg") is False:
-            self.callback(track, "Abort")
+            self.callback(track, (None, "Abort"))
             return False
             
         # Convert Data
-        self.callback(track, "Converting...")
+        self.callback(track, (None, "Converting..."))
         if subprocess.getstatusoutput("ffmpeg -h")[0] == 0:
-            test = subprocess.check_call(["ffmpeg", "-i", file + ".mpeg", file + ".mp3"]);
+            NULL = open(os.devnull, "w")
+            test = subprocess.check_call(["ffmpeg", "-i", file + ".mpeg", file + ".mp3"], stdout=NULL, stderr=subprocess.STDOUT);
             if test == 0:
-                self.callback(track, "Finished")
+                NULL.close()
+                self.callback(track, (True, 200, "Finished"))
                 os.remove(file + ".mpeg")
-        elif os.name == 'nt':
+        elif os.name == "nt":
             if getattr(sys, "frozen", False):
                 path = os.path.dirname(os.path.realpath(sys.executable))
             else:
                 path = os.path.dirname(os.path.realpath(__file__))
-            test = subprocess.check_call([os.path.join(path, "ffmpeg", "ffmpeg"), "-i", file + ".mpeg", file + ".mp3"]);
+            NULL = open(os.devnull, "w")
+            test = subprocess.check_call([os.path.join(path, "ffmpeg", "ffmpeg"), "-i", file + ".mpeg", file + ".mp3"], stdout=NULL, stderr=subprocess.STDOUT);
             if test == 0:
-                self.callback(track, "Finished")
+                NULL.close()
+                self.callback(track, (True, 200, "Finished"))
                 os.remove(file + ".mpeg")
         else:
-            self.callback(track, "FFMPEG missing")
+            self.callback(track, (None, "FFMPEG missing"))
         
         name = multiprocessing.current_process().name
         self.finished[track["hash"]] = self.current[name]
         del self.current[name]
         return self.handle()
     
-    ## Handle Downloader-Proccess
     def handle(self):
+        """Handle Download / Converter Function
+        
+        @since  0.1.0
+        """
         name = multiprocessing.current_process().name
         
         if name not in self.processes:
             self.processes[name] = multiprocessing.current_process()
         
-        ticket = next(iter(self.downloads))
-        self.current[name] = self.downloads[ticket]
-        del self.downloads[ticket];
-        return self.download(self.current[name])
+        if len(self.downloads) > 0:
+            ticket = next(iter(self.downloads))
+            self.current[name] = self.downloads[ticket]
+            del self.downloads[ticket];
+            return self.download(self.current[name])
+        
+        del self.current[name]
+        if len(self.current) > 0:
+            return self.stop()
     
-    # Callable Fallback
     def call(self, *args):
+        """Fallback Callback function
+        
+        @since  0.1.0
+        """
         pass
     
-    # Start Downloader
     def start(self, callback, pool):
+        """Start the Download Handler
+        
+        @since  0.1.0
+        """
         if callable(callback):
             self.callback = callback
         else:
@@ -266,8 +330,12 @@ class MMP3:
             self.pool.apply_async(self.handle)
         return True
     
-    # Stop Downloader
     def stop(self):
+        """Stop the Download Handler
+        
+        @since  0.1.0
+        @update 0.1.1
+        """
         if self.running is not True:
             return True
         
@@ -275,15 +343,18 @@ class MMP3:
             track = self.current[track];
             self.downloads[track["hash"]] = track
         
-        self.pool.terminate()
-        self.curent = {}
+        if self.pool is not False:
+            self.pool.terminate()
+        self.current = {}
         self.running = False
         return True
 
-##
-##  MMP3 __main__ CLI Call
-##
+
 def main():
+    """Main Instance Function / CLI
+    
+    @since  0.1.0
+    """
     parser = argparse.ArgumentParser(
            description="Download tracks from MusicMP3.ru"
     )
@@ -303,13 +374,7 @@ def main():
     if con.URL is False:
         parser.error("The passed MusicMP3.ru URL is invalid!")
     
-    if con.path is None:
-        if getattr(sys, "frozen", False):
-            con.path = os.path.dirname(os.path.realpath(sys.executable))
-        else:
-            con.path = os.path.dirname(os.path.realpath(__file__))
-    
-    if os.path.isdir(con.path) is False:
+    if con.path is not None and os.path.isdir(con.path) is False:
         parser.error("The Download Path doesn't exist os isn't writable!")
     
     mmp3 = MMP3(con.path)
@@ -326,20 +391,33 @@ def main():
     for track in tracks:
         mmp3.running = True
         mmp3.start(progress, False)
-        
-# CLI ProgressBar
-def progress(track, string):
-    if string.endswith("%"):
-        num = string.split(".")[0]
-        title = track["album"] + " - " + track["title"]
-        
-        sys.stdout.write("\r%s - %d%%" % (title,int(num)))
-        sys.stdout.flush()
-        return True
+    parser.exit(200)
+
+
+def progress(track, status):
+    """CLI ProgessBar Function
     
-    sys.stdout.write("\r%s%%" % string)
+    @since  0.1.0
+    @update 0.1.1
+    """
+    if status[0] is True:
+        if status[1] == 200:
+            title = track["album"] + " - " + track["title"]
+            sys.stdout.write("\r%s has been successfully downloaded\n" % title)
+        else:
+            title = track["album"] + " - " + track["title"]
+            split = str(status[2]).split(".")
+            split = (title, split[0], "{:<02d}".format(int(split[1])))
+            sys.stdout.write("\r%s - %s.%s %%" % split + " " * 10)
+            sys.stdout.write("\b" * 10)
+    elif status[0] is False:
+        sys.stdout.write("Error %d" % status[1] + " " * 10)
+        sys.stdout.write("\b" * 10)
+    else:
+        sys.stdout.write("\r%s" % status[1] + " " * 10)
+        sys.stdout.write("\b" * 10)
     sys.stdout.flush()
-    return True;
+
 
 if __name__ == "__main__":
     main()
