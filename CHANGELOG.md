@@ -1,6 +1,22 @@
 Changelog
 =========
 
+Version 0.1.2 - Alpha
+---------------------
+-   Add: A Clear TrackList Action Button
+-   Add: Right-Click Context-Menu for the input field
+-   Add: 'Clear', 'Cut', 'Copy', 'Paste', 'Select All' context menu functions
+-   Add: A new download-ticket system, adapted to the new multiprocessing.dummy
+-   Add: Callback methods `_cb_status` (custom), `_cb_success` and `_cb_error`
+-   Add: New .ini Configuration with 3 settings: "path", "dirname" and "filename"
+-   Add: New `_format` method, optimized for the new ini-settings
+-   Update: Check if file already exists.
+-   Update: Add icon to the setup.py Executable class
+-   Update: FFMPEG Converter Call has been moved to an own method
+-   Update: Rewritten multiprocessing.dummy implementation
+-   Bugfix: "Stop Download" crashes the tk environment, based on the ugly implementation of multiprocessing.dummy
+-   Pythonic: Follow some PEP 8 Standards / Rules
+
 Version 0.1.1 - Alpha
 ---------------------
 -   Add: A Favicon and Icons for the download button

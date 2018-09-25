@@ -25,4 +25,4 @@ country. You are responsible for your legal security, so either don't use it or 
 caught using it! This is just a fun project and I assume no warranty or legal rights!
 
 
-![MoX Interface](https://raw.githubusercontent.com/vkGiot/MoX/master/assets/mox.png)
+<p style="text-align:center">![MoX Interface](https://raw.githubusercontent.com/vkGiot/MoX/master/mox.jpg)</p>
